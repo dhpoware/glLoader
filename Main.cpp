@@ -1,6 +1,5 @@
 import <windows.h>;
 import <GL/glcorearb.h>;
-import <exception>;
 import <memory>;
 import <string>;
 import OpenGL;
@@ -48,25 +47,25 @@ public:
         std::wstring m_message;
     };
 
-	GLApplication();
+    GLApplication();
     GLApplication(const wchar_t *pszWindowName);
     ~GLApplication();
 
-	int run();
+    int run();
 
 private:
-	static LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    static LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-	bool create();
+    bool create();
     void destroy();
-	void init(int argc, wchar_t *argv[]);
+    void init(int argc, wchar_t *argv[]);
     void initApplication(const wchar_t *pszWindowName);
     void initOpenGL();
-	int mainLoop();
+    int mainLoop();
     void render() const;
     void shutdown();
     void update();
-	LRESULT windowProcImpl(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    LRESULT windowProcImpl(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     WNDCLASSEXW m_wcl{};
     HWND m_hWnd{nullptr};
@@ -106,11 +105,11 @@ int GLApplication::run()
                 initOpenGL();
                 init(__argc, __wargv);
                 status = mainLoop();
-				shutdown();
+		shutdown();
             }
             catch (...)
             {
-				shutdown();
+		shutdown();
                 throw;
             }
             
@@ -171,16 +170,16 @@ void GLApplication::destroy()
 {
     if (m_pContext && m_hRC)
     {
-		m_pContext->wglMakeCurrent(m_hDC, nullptr);
-		m_pContext->wglDeleteContext(m_hRC);
-		m_hRC = nullptr;
+	m_pContext->wglMakeCurrent(m_hDC, nullptr);
+	m_pContext->wglDeleteContext(m_hRC);
+	m_hRC = nullptr;
     }
 	
     if (m_hDC)
-	{
-		ReleaseDC(m_hWnd, m_hDC);
-		m_hDC = nullptr;
-	}
+    {
+	ReleaseDC(m_hWnd, m_hDC);
+	m_hDC = nullptr;
+    }
     
     UnregisterClassW(m_wcl.lpszClassName, m_hInstance);
 }
@@ -226,11 +225,11 @@ void GLApplication::initOpenGL()
     if (!(m_hDC = GetDC(m_hWnd)))
         throw GLApplication::Error(L"GetDC() failed.");
 
-	if (!(m_hRC = m_pContext->wglCreateContext(m_hDC)))
-		throw GLApplication::Error(L"GLContext::wglCreateContext() failed.");
+    if (!(m_hRC = m_pContext->wglCreateContext(m_hDC)))
+	throw GLApplication::Error(L"GLContext::wglCreateContext() failed.");
 	
-	if (!m_pContext->wglMakeCurrent(m_hDC, m_hRC))
-		throw GLApplication::Error(L"GLContext::wglMakeCurrent() failed.");
+    if (!m_pContext->wglMakeCurrent(m_hDC, m_hRC))
+	throw GLApplication::Error(L"GLContext::wglMakeCurrent() failed.");
 }
 
 int GLApplication::mainLoop()
@@ -302,25 +301,25 @@ LRESULT CALLBACK GLApplication::windowProc(HWND hWnd, UINT msg, WPARAM wParam, L
 LRESULT GLApplication::windowProcImpl(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
-	{
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		return 0;
+    {
+    case WM_DESTROY:
+        PostQuitMessage(0);
+	return 0;
 
-	case WM_SIZE:
+    case WM_SIZE:
         m_windowWidth = static_cast<int>(LOWORD(lParam));
         m_windowHeight = static_cast<int>(HIWORD(lParam));
         break;
 
-	default:
-		break;
-	}
+    default:
+        break;
+    }
 
-	return DefWindowProc(hWnd, msg, wParam, lParam);
+    return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {
-	GLApplication app{L"OpenGL Application"};
-	return app.run();
+    GLApplication app{L"OpenGL Application"};
+    return app.run();
 }
