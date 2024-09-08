@@ -1,0 +1,2 @@
+# glLoader
+This C++20 Windows OpenGL 1.1 application demonstrates how to avoid having to statically link to opengl32.lib by manually loading opengl32.dll at runtime and accessing the WGL API using function pointers.
