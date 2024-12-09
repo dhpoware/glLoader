@@ -95,7 +95,7 @@ GLApplication::~GLApplication()
 int GLApplication::run()
 {
     int status{};
- 
+
     try
     {
         if (create())
@@ -105,14 +105,14 @@ int GLApplication::run()
                 initOpenGL();
                 init(__argc, __wargv);
                 status = mainLoop();
-		shutdown();
+                shutdown();
             }
             catch (...)
             {
-		shutdown();
+                shutdown();
                 throw;
             }
-            
+
             destroy();
         }
     }
@@ -127,7 +127,7 @@ int GLApplication::run()
 }
 
 bool GLApplication::create()
-{      
+{
     if (!RegisterClassExW(&m_wcl))
         return false;
 
@@ -160,7 +160,7 @@ bool GLApplication::create()
 
         GetClientRect(m_hWnd, &rc);
         m_windowWidth = rc.right - rc.left;
-        m_windowHeight = rc.bottom - rc.top;   
+        m_windowHeight = rc.bottom - rc.top;
 
         return true;
     }
@@ -170,17 +170,17 @@ void GLApplication::destroy()
 {
     if (m_pContext && m_hRC)
     {
-	m_pContext->wglMakeCurrent(m_hDC, nullptr);
-	m_pContext->wglDeleteContext(m_hRC);
-	m_hRC = nullptr;
+        m_pContext->wglMakeCurrent(m_hDC, nullptr);
+        m_pContext->wglDeleteContext(m_hRC);
+        m_hRC = nullptr;
     }
-	
+
     if (m_hDC)
     {
-	ReleaseDC(m_hWnd, m_hDC);
-	m_hDC = nullptr;
+        ReleaseDC(m_hWnd, m_hDC);
+        m_hDC = nullptr;
     }
-    
+
     UnregisterClassW(m_wcl.lpszClassName, m_hInstance);
 }
 
@@ -191,7 +191,7 @@ void GLApplication::init(int argc, wchar_t *argv[])
 void GLApplication::initApplication(const wchar_t *pszWindowName)
 {
     m_pszWindowName = pszWindowName;
-    
+
     m_wcl.cbSize = sizeof(m_wcl);
     m_wcl.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
     m_wcl.lpfnWndProc = windowProc;
@@ -218,24 +218,50 @@ void GLApplication::initOpenGL()
         .cDepthBits = 16,
         .iLayerType = PFD_MAIN_PLANE,
     };
-    	
+
     if (!(m_pContext = OpenGLContext::createForWindow(m_hWnd, pfd)))
         throw GLApplication::Error(L"GLContext::createForWindow() failed.");
 
     if (!(m_hDC = GetDC(m_hWnd)))
         throw GLApplication::Error(L"GetDC() failed.");
 
-    if (!(m_hRC = m_pContext->wglCreateContext(m_hDC)))
-	throw GLApplication::Error(L"GLContext::wglCreateContext() failed.");
-	
+    // Verify that this OpenGL implementation supports the required extensions.
+	if (m_pContext->extensionSupported(L"WGL_ARB_create_context"))
+    {
+        // Create an OpenGL 4.6 core profile rendering context.
+        
+        int attribList[]
+        {
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 6,
+            WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+            WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+            0
+        };
+    	
+        if (!(m_hRC = m_pContext->wglCreateContextAttribsARB(m_hDC, 0, attribList)))
+            throw GLApplication::Error(L"wglCreateContextAttribsARB() failed for OpenGL 4.6 core profile context.");
+
+        SetWindowTextW(m_hWnd, L"OpenGL 4.6 core profile");
+    }
+    else
+    {
+        // Fallback to legacy OpenGL 2.x rendering context.
+
+        if (!(m_hRC = m_pContext->wglCreateContext(m_hDC)))
+            throw GLApplication::Error(L"GLContext::wglCreateContext() failed.");
+
+        SetWindowTextW(m_hWnd, L"OpenGL 2");
+    }
+
     if (!m_pContext->wglMakeCurrent(m_hDC, m_hRC))
-	throw GLApplication::Error(L"GLContext::wglMakeCurrent() failed.");
+        throw GLApplication::Error(L"GLContext::wglMakeCurrent() failed.");
 }
 
 int GLApplication::mainLoop()
 {
     MSG msg{};
-    
+
     memset(&msg, 0, sizeof(msg));
     ShowWindow(m_hWnd, SW_SHOWDEFAULT);
     UpdateWindow(m_hWnd);
@@ -291,11 +317,15 @@ LRESULT CALLBACK GLApplication::windowProc(HWND hWnd, UINT msg, WPARAM wParam, L
         pApplication = reinterpret_cast<GLApplication *>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
     }
 
-    if (!pApplication)
+    if (pApplication)
+    {
+        pApplication->m_hWnd = hWnd;
+        return pApplication->windowProcImpl(hWnd, msg, wParam, lParam);
+    }
+    else
+    {
         return DefWindowProc(hWnd, msg, wParam, lParam);
-
-    pApplication->m_hWnd = hWnd;
-    return pApplication->windowProcImpl(hWnd, msg, wParam, lParam);
+    }
 }
 
 LRESULT GLApplication::windowProcImpl(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -304,7 +334,7 @@ LRESULT GLApplication::windowProcImpl(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
     {
     case WM_DESTROY:
         PostQuitMessage(0);
-	return 0;
+        return 0;
 
     case WM_SIZE:
         m_windowWidth = static_cast<int>(LOWORD(lParam));
