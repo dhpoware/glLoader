@@ -1,10 +1,4 @@
-import <windows.h>;
-import <GL/glcorearb.h>;
-import <memory>;
-import <string>;
-import OpenGL;
-
-// Copyright (c) 2024 dhpoware. All Rights Reserved.
+// Copyright (c) 2024, 2026 dhpoware. All Rights Reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -23,10 +17,12 @@ import OpenGL;
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
-//
-// Note:
-// VS2022 (v17.11.2) has an IntelliSense bug that causes it to report false errors
-// if this copyright notice is placed at the top of the file before import statements.
+
+import <windows.h>;
+import <GL/glcorearb.h>;
+import <memory>;
+import <string>;
+import OpenGL;
 
 // This Windows OpenGL application demonstrates how to use the OpenGLContext class
 // to avoid having to statically link to OpenGL32.lib.
