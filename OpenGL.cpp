@@ -1,4 +1,4 @@
-// Copyright (c) 2024 dhpoware. All Rights Reserved.
+// Copyright (c) 2024, 2026 dhpoware. All Rights Reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
