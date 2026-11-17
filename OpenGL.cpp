@@ -279,52 +279,62 @@ BOOL OpenGLContext::wglUseFontOutlinesW(HDC hdc, DWORD first, DWORD count, DWORD
 HGLRC OpenGLContext::wglCreateContextAttribsARB(HDC hDC, HGLRC hShareContext, const int* attribList)
 {
 	// An OpenGL 3.1 rendering context is created using the new
-    // wglCreateContextAttribsARB() function. This new function was introduced
-    // in OpenGL 3.0 to maintain backwards compatibility with existing OpenGL
-    // 2.1 and older applications. To create an OpenGL 3.1 rendering context
-    // first create an OpenGL 2.1 or older rendering context using the
-    // wglCreateContext() function. Activate the context and then call the new
-    // wglCreateContextAttribsARB() function to create an OpenGL 3.1 rendering
-    // context. Once the context is created activate it to enable OpenGL 3.1
-    // functionality.
-    //
-    // For further details see:
-    // http://www.opengl.org/registry/specs/ARB/wgl_create_context.txt
+	// wglCreateContextAttribsARB() function. This new function was introduced
+	// in OpenGL 3.0 to maintain backwards compatibility with existing OpenGL
+	// 2.1 and older applications. To create an OpenGL 3.1 rendering context
+	// first create an OpenGL 2.1 or older rendering context using the
+	// wglCreateContext() function. Activate the context and then call the new
+	// wglCreateContextAttribsARB() function to create an OpenGL 3.1 rendering
+	// context. Once the context is created activate it to enable OpenGL 3.1
+	// functionality.
+	//
+	// For further details see:
+	// http://www.opengl.org/registry/specs/ARB/wgl_create_context.txt
 
 	HGLRC hContext{nullptr};
-    HGLRC hCurrentContext{wglGetCurrentContext()};
+	HGLRC hCurrentContext{wglGetCurrentContext()};
 
 	if (!hCurrentContext)
-    {
-        if (!(hCurrentContext = wglCreateContext(hDC)))
-            return nullptr;
+	{
+		HGLRC hTempContext{wglCreateContext(hDC)};
 
-        if (!wglMakeCurrent(hDC, hCurrentContext))
-        {
-            wglDeleteContext(hCurrentContext);
-            return nullptr;
-        }
+		if (!hTempContext)
+			return nullptr;
 
-        LOAD_ENTRYPOINT("wglCreateContextAttribsARB", m_pfnWglCreateContextAttribsARB, PFNWGLCREATECONTEXTATTRIBSARBPROC);
-        
-        if (m_pfnWglCreateContextAttribsARB)
-            hContext = m_pfnWglCreateContextAttribsARB(hDC, hShareContext, attribList);
+		if (!wglMakeCurrent(hDC, hTempContext))
+		{
+			wglDeleteContext(hTempContext);
+			return nullptr;
+		}
 
-        wglMakeCurrent(hDC, nullptr);
-        wglDeleteContext(hCurrentContext);
-    }
+		if (!m_pfnWglCreateContextAttribsARB)
+			m_pfnWglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(Loader::instance().getProcAddress("wglCreateContextAttribsARB"));
+
+		DWORD dwLastError{ERROR_SUCCESS};
+
+		if (m_pfnWglCreateContextAttribsARB)
+		{
+			hContext = m_pfnWglCreateContextAttribsARB(hDC, hShareContext, attribList);
+			if (!hContext)
+				dwLastError = GetLastError();
+		}
+
+		wglMakeCurrent(nullptr, nullptr);
+		wglDeleteContext(hTempContext);
+
+		if (!hContext && dwLastError != ERROR_SUCCESS)
+			SetLastError(dwLastError);
+	}
 	else
-    {
-        if (!wglMakeCurrent(hDC, hCurrentContext))
-            return nullptr;
+	{
+		if (!m_pfnWglCreateContextAttribsARB)
+			m_pfnWglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(Loader::instance().getProcAddress("wglCreateContextAttribsARB"));
 
-        LOAD_ENTRYPOINT("wglCreateContextAttribsARB", m_pfnWglCreateContextAttribsARB, PFNWGLCREATECONTEXTATTRIBSARBPROC);
-        
-        if (m_pfnWglCreateContextAttribsARB)
-            hContext = m_pfnWglCreateContextAttribsARB(hDC, hShareContext, attribList);
-    }
+		if (m_pfnWglCreateContextAttribsARB)
+			hContext = m_pfnWglCreateContextAttribsARB(hDC, hShareContext, attribList);
+	}
 
-    return hContext;
+	return hContext;
 }
 
 const char *OpenGLContext::wglGetExtensionsStringARB(HDC hDC)
